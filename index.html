@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HabitTracker</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <button class="theme-toggle" id="themeToggle">🌙</button>
+    <div class="container">
+        <header>
+            <h1>HabitTracker</h1>
+        </header>
+        
+        <main>
+            <section class="habits-section">
+                <h2>Привычки</h2>
+                <form id="habit-form">
+                    <input type="text" id="habit-name" placeholder="Название привычки" required>
+                    <input type="number" id="habit-frequency" placeholder="Количество раз в день" required min="1">
+                    <button type="submit">Добавить привычку</button>
+                </form>
+                <div id="habits-list"></div>
+            </section>
+
+            <section class="expenses-section">
+                <h2>Расходы</h2>
+                <form id="expense-form">
+                    <input type="text" id="expense-name" placeholder="Название" required>
+                    <select id="expense-type" required>
+                        <option value="">Выберите категорию</option>
+                        <option value="еда">Еда</option>
+                        <option value="транспорт">Транспорт</option>
+                        <option value="развлечения">Развлечения</option>
+                        <option value="школа">Школа</option>
+                        <option value="другое">Другое</option>
+                    </select>
+                    <input type="date" id="expense-date" required>
+                    <input type="number" id="expense-amount" placeholder="Сумма(руб)" required min="0" step="0.01">
+                    <button type="submit">Добавить расход</button>
+                </form>
+                <div id="expenses-list"></div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Модальное окно подтверждения -->
+    <div class="modal-overlay" id="confirmModal">
+        <div class="modal">
+            <h3>Подтверждение удаления</h3>
+            <p id="modalMessage"></p>
+            <div class="modal-buttons">
+                <button class="confirm-button" id="confirmDelete">Удалить</button>
+                <button class="cancel-button" id="cancelDelete">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 
