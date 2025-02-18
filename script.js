@@ -286,4 +286,156 @@ function deleteExpense(id) {
 
 // Инициализация отображения
 renderHabits();
-renderExpenses(); 
+renderExpenses();
+
+// Календарь
+const calendarOverlay = document.getElementById('calendarOverlay');
+const calendarDays = document.getElementById('calendarDays');
+const currentMonthElement = document.getElementById('currentMonth');
+const currentYearElement = document.getElementById('currentYear');
+const prevMonthBtn = document.getElementById('prevMonth');
+const nextMonthBtn = document.getElementById('nextMonth');
+const todayBtn = document.getElementById('todayBtn');
+const clearBtn = document.getElementById('clearBtn');
+
+const months = [
+    'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+    'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
+];
+
+let currentDate = new Date();
+let selectedDate = new Date();
+
+// Открыть календарь при клике на поле даты
+document.getElementById('expense-date').addEventListener('click', (e) => {
+    e.preventDefault();
+    calendarOverlay.style.display = 'flex';
+    renderCalendar();
+});
+
+// Закрыть календарь при клике вне его
+calendarOverlay.addEventListener('click', (e) => {
+    if (e.target === calendarOverlay) {
+        calendarOverlay.style.display = 'none';
+    }
+});
+
+// Обработчики навигации
+prevMonthBtn.addEventListener('click', () => {
+    currentDate.setMonth(currentDate.getMonth() + 1);
+    renderCalendar();
+});
+
+nextMonthBtn.addEventListener('click', () => {
+    currentDate.setMonth(currentDate.getMonth() - 1);
+    renderCalendar();
+});
+
+todayBtn.addEventListener('click', () => {
+    currentDate = new Date();
+    selectedDate = new Date();
+    renderCalendar();
+    updateDateInput();
+});
+
+// Обработчик для кнопки Очистить
+clearBtn.addEventListener('click', () => {
+    const dateInput = document.getElementById('expense-date');
+    dateInput.value = '';
+    calendarOverlay.style.display = 'none';
+});
+
+// Добавляем обработчик прокрутки колесиком
+calendarOverlay.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const direction = e.deltaY > 0 ? 1 : -1;
+    
+    const calendarContent = document.querySelector('.calendar-grid');
+    calendarContent.style.transform = `translateY(${direction * 20}px)`;
+    calendarContent.style.opacity = '0';
+    
+    setTimeout(() => {
+        currentDate.setMonth(currentDate.getMonth() + direction);
+        renderCalendar();
+        
+        // Сбрасываем трансформацию в противоположном направлении и возвращаем прозрачность
+        calendarContent.style.transform = `translateY(${-direction * 20}px)`;
+        calendarContent.style.opacity = '1';
+        
+        // Плавно возвращаем в исходное положение
+        requestAnimationFrame(() => {
+            calendarContent.style.transform = 'translateY(0)';
+        });
+    }, 200);
+});
+
+function renderCalendar() {
+    const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+    
+    // Обновляем заголовок с анимацией
+    const monthYear = document.querySelector('.month-year');
+    monthYear.style.transform = 'translateY(-10px)';
+    monthYear.style.opacity = '0';
+    
+    setTimeout(() => {
+        currentMonthElement.textContent = months[currentDate.getMonth()];
+        currentYearElement.textContent = currentDate.getFullYear();
+        
+        monthYear.style.transform = 'translateY(0)';
+        monthYear.style.opacity = '1';
+    }, 100);
+
+    // Остальной код renderCalendar остается без изменений
+    calendarDays.innerHTML = '';
+    
+    let firstDayIndex = firstDay.getDay() || 7;
+    firstDayIndex--;
+    
+    const prevLastDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 0);
+    for (let i = firstDayIndex - 1; i >= 0; i--) {
+        const dayElement = createDayElement(prevLastDay.getDate() - i, 'other-month');
+        calendarDays.appendChild(dayElement);
+    }
+    
+    for (let day = 1; day <= lastDay.getDate(); day++) {
+        const isToday = isCurrentDay(day);
+        const dayElement = createDayElement(day, isToday ? 'today' : '');
+        calendarDays.appendChild(dayElement);
+    }
+    
+    const remainingDays = 42 - calendarDays.children.length;
+    for (let day = 1; day <= remainingDays; day++) {
+        const dayElement = createDayElement(day, 'other-month');
+        calendarDays.appendChild(dayElement);
+    }
+}
+
+function createDayElement(day, className = '') {
+    const dayElement = document.createElement('div');
+    dayElement.className = `day ${className}`;
+    dayElement.textContent = day;
+    
+    dayElement.addEventListener('click', () => {
+        if (!dayElement.classList.contains('other-month')) {
+            selectedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+            updateDateInput();
+            calendarOverlay.style.display = 'none';
+        }
+    });
+    
+    return dayElement;
+}
+
+function isCurrentDay(day) {
+    const today = new Date();
+    return day === today.getDate() &&
+           currentDate.getMonth() === today.getMonth() &&
+           currentDate.getFullYear() === today.getFullYear();
+}
+
+function updateDateInput() {
+    const dateInput = document.getElementById('expense-date');
+    const formattedDate = selectedDate.toISOString().split('T')[0];
+    dateInput.value = formattedDate;
+} 

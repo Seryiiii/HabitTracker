@@ -5,42 +5,77 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HabitTracker</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/uicons-solid-rounded/css/uicons-solid-rounded.css'>
 </head>
 <body>
-    <button class="theme-toggle" id="themeToggle">🌙</button>
+    <button class="theme-toggle" id="themeToggle" aria-label="Переключить тему">🌙</button>
     <div class="container">
         <header>
             <h1>HabitTracker</h1>
+            <p class="subtitle">Отслеживайте свои привычки и расходы</p>
         </header>
         
         <main>
             <section class="habits-section">
-                <h2>Привычки</h2>
+                <h2>
+                    <span class="icon">✨</span>
+                    Привычки
+                </h2>
                 <form id="habit-form">
-                    <input type="text" id="habit-name" placeholder="Название привычки" required>
-                    <input type="number" id="habit-frequency" placeholder="Количество раз в день" required min="1">
-                    <button type="submit">Добавить привычку</button>
+                    <div class="form-group">
+                        <label for="habit-name">Название привычки</label>
+                        <input type="text" id="habit-name" placeholder="Например: Чтение книг" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="habit-frequency">Количество раз в день</label>
+                        <input type="number" id="habit-frequency" placeholder="1" required min="1">
+                    </div>
+                    <button type="submit">
+                        <span class="icon">+</span>
+                        Добавить привычку
+                    </button>
                 </form>
-                <div id="habits-list"></div>
+                <div id="habits-list" class="list-container"></div>
             </section>
 
             <section class="expenses-section">
-                <h2>Расходы</h2>
+                <h2>
+                    <span class="icon">💰</span>
+                    Расходы
+                </h2>   
                 <form id="expense-form">
-                    <input type="text" id="expense-name" placeholder="Название" required>
-                    <select id="expense-type" required>
-                        <option value="">Выберите категорию</option>
-                        <option value="еда">Еда</option>
-                        <option value="транспорт">Транспорт</option>
-                        <option value="развлечения">Развлечения</option>
-                        <option value="школа">Школа</option>
-                        <option value="другое">Другое</option>
-                    </select>
-                    <input type="date" id="expense-date" required>
-                    <input type="number" id="expense-amount" placeholder="Сумма" required min="0" step="0.01">
-                    <button type="submit">Добавить расход</button>
+                    <div class="form-group">
+                        <label for="expense-name">Название</label>
+                        <input type="text" id="expense-name" placeholder="Например: Продукты" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="expense-type">Категория</label>
+                        <select id="expense-type" required>
+                            <option value="">Выберите категорию</option>
+                            <option value="еда">🍽️ Еда</option>
+                            <option value="транспорт">🚌 Транспорт</option>
+                            <option value="развлечения">🎮 Развлечения</option>
+                            <option value="школа">📚 Школа</option>
+                            <option value="другое">📦 Другое</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="expense-date">Дата</label>
+                        <input type="date" id="expense-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="expense-amount">Сумма</label>
+                        <input type="number" id="expense-amount" placeholder="0.00" required min="0" step="0.01">
+                    </div>
+                    <button type="submit">
+                        <span class="icon">+</span>
+                        Добавить расход
+                    </button>
                 </form>
-                <div id="expenses-list"></div>
+                <div id="expenses-list" class="list-container"></div>
             </section>
         </main>
     </div>
@@ -48,11 +83,53 @@
     <!-- Модальное окно подтверждения -->
     <div class="modal-overlay" id="confirmModal">
         <div class="modal">
-            <h3>Подтверждение удаления</h3>
+            <h3>
+                <span class="icon">⚠️</span>
+                Подтверждение удаления
+            </h3>
             <p id="modalMessage"></p>
             <div class="modal-buttons">
-                <button class="confirm-button" id="confirmDelete">Удалить</button>
+                <button class="confirm-button" id="confirmDelete">
+                    <span class="icon">🗑️</span>
+                    Удалить
+                </button>
                 <button class="cancel-button" id="cancelDelete">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Календарь -->
+    <div class="calendar-overlay" id="calendarOverlay">
+        <div class="calendar-modal">
+            <div class="calendar-header">
+                <div class="month-year">
+                    <span id="currentMonth">Январь</span>
+                    <span id="currentYear">2025</span>
+                </div>
+                <div class="month-navigation">
+                    <button class="nav-btn" id="prevMonth">
+                        <i class="fi fi-sr-down"></i>
+                    </button>
+                    <button class="nav-btn" id="nextMonth">
+                        <i class="fi fi-sr-up"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="calendar-grid">
+                <div class="weekdays">
+                    <div>Пн</div>
+                    <div>Вт</div>
+                    <div>Ср</div>
+                    <div>Чт</div>
+                    <div>Пт</div>
+                    <div>Сб</div>
+                    <div>Вс</div>
+                </div>
+                <div class="days" id="calendarDays"></div>
+            </div>
+            <div class="calendar-footer">
+                <button class="today-btn" id="clearBtn">Очистить</button>
+                <button class="today-btn" id="todayBtn">Сегодня</button>
             </div>
         </div>
     </div>
