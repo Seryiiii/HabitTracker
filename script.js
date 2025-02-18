@@ -193,11 +193,50 @@ function renderHabits() {
     });
 }
 
-// Функция отображения расходов
+// Получаем элементы фильтра и сортировки
+const expenseFilter = document.getElementById('expense-filter');
+const expenseSort = document.getElementById('expense-sort');
+
+// Добавляем обработчики событий
+expenseFilter.addEventListener('change', renderExpenses);
+expenseSort.addEventListener('change', renderExpenses);
+
+// Функция фильтрации расходов
+function filterExpenses(expenses) {
+    const filterValue = expenseFilter.value;
+    if (filterValue === 'все') {
+        return expenses;
+    }
+    return expenses.filter(expense => expense.type === filterValue);
+}
+
+// Функция сортировки расходов
+function sortExpenses(expenses) {
+    const sortValue = expenseSort.value;
+    return [...expenses].sort((a, b) => {
+        switch (sortValue) {
+            case 'date-desc':
+                return new Date(b.date) - new Date(a.date);
+            case 'date-asc':
+                return new Date(a.date) - new Date(b.date);
+            case 'amount-desc':
+                return b.amount - a.amount;
+            case 'amount-asc':
+                return a.amount - b.amount;
+            default:
+                return 0;
+        }
+    });
+}
+
+// Обновляем функцию отображения расходов
 function renderExpenses() {
     expensesListDiv.innerHTML = '';
     
-    expenses.forEach(expense => {
+    let filteredExpenses = filterExpenses(expenses);
+    let sortedExpenses = sortExpenses(filteredExpenses);
+    
+    sortedExpenses.forEach(expense => {
         const expenseElement = document.createElement('div');
         expenseElement.className = 'expense-item';
         

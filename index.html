@@ -46,6 +46,24 @@
                     <span class="icon">💰</span>
                     Расходы
                 </h2>   
+                <div class="expenses-controls">
+                    <div class="filter-group">
+                        <select id="expense-filter" aria-label="Фильтр расходов">
+                            <option value="все">🔍 Все категории</option>
+                            <option value="еда">🍽️ Еда</option>
+                            <option value="транспорт">🚌 Транспорт</option>
+                            <option value="развлечения">🎮 Развлечения</option>
+                            <option value="школа">📚 Школа</option>
+                            <option value="другое">📦 Другое</option>
+                        </select>
+                        <select id="expense-sort" aria-label="Сортировка расходов">
+                            <option value="date-desc">📅 Сначала новые</option>
+                            <option value="date-asc">📅 Сначала старые</option>
+                            <option value="amount-desc">💰 Сначала дорогие</option>
+                            <option value="amount-asc">💰 Сначала дешевые</option>
+                        </select>
+                    </div>
+                </div>
                 <form id="expense-form">
                     <div class="form-group">
                         <label for="expense-name">Название</label>
