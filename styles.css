@@ -603,4 +603,376 @@ body.dark-theme .filter-group select {
     background: var(--bg-secondary);
     color: var(--text-primary);
     border-color: var(--border-color);
+}
+
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: var(--accent-color);
+    color: white;
+    padding: 15px 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    animation: slideIn 0.3s ease-out;
+    z-index: 1000;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.manage-categories-btn {
+    padding: 0.5rem 1rem;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.manage-categories-btn:hover {
+    background: var(--border-color);
+    transform: translateY(-1px);
+}
+
+.categories-modal {
+    max-width: 500px;
+}
+
+.categories-list {
+    margin-top: 1.5rem;
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 10px;
+    margin-right: -10px;
+}
+
+.categories-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.categories-list::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 4px;
+}
+
+.categories-list::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 4px;
+}
+
+.categories-list::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-hover);
+}
+
+/* Стили для темной темы */
+body.dark-theme .categories-list::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+
+.category-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+    background: var(--bg-secondary);
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-color);
+}
+
+.category-item .category-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.category-item .category-emoji {
+    font-size: 1.25rem;
+}
+
+.category-item .delete-btn {
+    padding: 0.25rem 0.5rem;
+    background: var(--danger-color);
+}
+
+.category-item .edit-btn {
+    padding: 0.25rem 0.5rem;
+    background: var(--primary-color);
+    margin-right: 0.5rem;
+}
+
+.category-item .buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.color-picker {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+input[type="color"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 50px;
+    height: 40px;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    padding: 0;
+    cursor: pointer;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 0.4rem;
+}
+
+.random-color-btn {
+    padding: 0.5rem 1rem;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    flex: 1;
+}
+
+.random-color-btn:hover {
+    background: var(--border-color);
+}
+
+.category-item .color-indicator {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    margin-right: 0.5rem;
+}
+
+#category-cancel {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    margin-top: 0.5rem;
+}
+
+#category-cancel:hover {
+    background: var(--border-color);
+}
+
+.editing {
+    background: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+}
+
+/* Стили для анализа расходов */
+.expenses-analysis-section {
+    margin-top: 2rem;
+}
+
+.analysis-filters {
+    display: grid;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+@media (min-width: 768px) {
+    .analysis-filters {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        align-items: start;
+    }
+}
+
+.date-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.date-range {
+    grid-column: 1 / -1;
+}
+
+.analysis-filters .form-group {
+    margin: 0;
+}
+
+.analysis-filters input,
+.analysis-filters select {
+    width: 100%;
+    cursor: pointer;
+}
+
+.analysis-filters input[type="date"] {
+    position: relative;
+    background: var(--bg-primary) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Cpath fill='%236b7280' d='M6 1V3H14V1H16V3H19V19H1V3H4V1H6ZM17 7H3V17H17V7Z'/%3E%3C/svg%3E") no-repeat right 0.5rem center/1.25rem;
+    padding-right: 2.5rem;
+}
+
+.analysis-filters input[type="date"]::-webkit-calendar-picker-indicator {
+    opacity: 0;
+    cursor: pointer;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    height: auto;
+}
+
+body.dark-theme .analysis-filters input[type="date"] {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Cpath fill='%239ca3af' d='M6 1V3H14V1H16V3H19V19H1V3H4V1H6ZM17 7H3V17H17V7Z'/%3E%3C/svg%3E");
+}
+
+.analysis-results {
+    display: grid;
+    gap: 2rem;
+    padding-top: 2rem;
+    margin-top: 1rem;
+    border-top: 1px solid var(--border-color);
+    clear: both;
+}
+
+.total-amount {
+    text-align: center;
+}
+
+.total-amount h3 {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.total-amount span {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.category-breakdown h3 {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    margin-bottom: 1rem;
+}
+
+.categories-amounts {
+    display: grid;
+    gap: 1rem;
+}
+
+.category-amount {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border-radius: 0.75rem;
+    border: 1px solid var(--border-color);
+}
+
+.category-amount .category-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.category-amount .category-emoji {
+    font-size: 1.5rem;
+}
+
+.category-amount .amount {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.category-amount .percentage {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-left: 0.5rem;
+}
+
+/* Анимация для сумм */
+@keyframes countUp {
+    from {
+        transform: translateY(10px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.total-amount span, .category-amount {
+    animation: countUp 0.5s ease-out forwards;
+}
+
+/* Стили для графика расходов */
+.expenses-chart-section {
+    margin-top: 2rem;
+}
+
+.chart-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.chart-period select {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s;
+}
+
+.legend-item:hover {
+    background: var(--bg-secondary);
+}
+
+.legend-item.disabled {
+    opacity: 0.5;
+}
+
+.legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+}
+
+.chart-container {
+    position: relative;
+    height: 400px;
+    width: 100%;
+    margin-top: 1rem;
 } 

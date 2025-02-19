@@ -25,6 +25,13 @@ themeToggle.addEventListener('click', () => {
 // Загрузка данных из localStorage
 let habits = JSON.parse(localStorage.getItem('habits')) || [];
 let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
+let categories = JSON.parse(localStorage.getItem('categories')) || [
+    { id: 1, name: 'Еда', emoji: '🍽️', value: 'еда', color: '#FF6384' },
+    { id: 2, name: 'Транспорт', emoji: '🚌', value: 'транспорт', color: '#36A2EB' },
+    { id: 3, name: 'Развлечения', emoji: '🎮', value: 'развлечения', color: '#FFCE56' },
+    { id: 4, name: 'Школа', emoji: '📚', value: 'школа', color: '#4BC0C0' },
+    { id: 5, name: 'Другое', emoji: '📦', value: 'другое', color: '#9966FF' }
+];
 
 // Проверка и сброс прогресса привычек
 function resetHabitsProgress() {
@@ -32,16 +39,38 @@ function resetHabitsProgress() {
     const lastResetDate = localStorage.getItem('lastResetDate');
     
     if (lastResetDate !== today) {
-        habits = habits.map(habit => ({
-            ...habit,
-            progress: 0,
-            date: today
-        }));
+        habits = habits.map(habit => {
+            // Проверяем, был ли достигнут прогресс вчера
+            const wasCompletedYesterday = habit.progress >= habit.frequency;
+            
+            // Обновляем серию
+            if (wasCompletedYesterday) {
+                habit.streak = (habit.streak || 0) + 1;
+                habit.lastCompletedDate = lastResetDate;
+            } else {
+                habit.streak = 0;
+            }
+            
+            return {
+                ...habit,
+                progress: 0,
+                date: today
+            };
+        });
         
         localStorage.setItem('habits', JSON.stringify(habits));
         localStorage.setItem('lastResetDate', today);
         
-        // Обновляем отображение
+        // Показываем уведомление
+        const notification = document.createElement('div');
+        notification.className = 'notification';
+        notification.textContent = 'Прогресс привычек обнулён для нового дня';
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+        
         renderHabits();
     }
 }
@@ -49,8 +78,8 @@ function resetHabitsProgress() {
 // Вызываем функцию при загрузке страницы
 resetHabitsProgress();
 
-// Проверяем каждую минуту, не наступил ли новый день
-setInterval(resetHabitsProgress, 60000);
+// Проверяем каждые 5 минут вместо каждой минуты для оптимизации
+setInterval(resetHabitsProgress, 300000);
 
 // Получение элементов форм
 const habitForm = document.getElementById('habit-form');
@@ -104,6 +133,8 @@ habitForm.addEventListener('submit', (e) => {
         name: habitName,
         frequency: habitFrequency,
         progress: 0,
+        streak: 0,
+        lastCompletedDate: null,
         date: new Date().toISOString().split('T')[0]
     };
     
@@ -172,6 +203,7 @@ function renderHabits() {
             <div>
                 <h3>${habit.name}</h3>
                 <p>Цель: ${habit.progress}/${habit.frequency} раз в день</p>
+                <p>Серия: ${habit.streak || 0} дней подряд 🔥</p>
                 <div class="progress-bar">
                     <div class="progress" style="width: 0%"></div>
                 </div>
@@ -474,7 +506,637 @@ function isCurrentDay(day) {
 }
 
 function updateDateInput() {
-    const dateInput = document.getElementById('expense-date');
     const formattedDate = selectedDate.toISOString().split('T')[0];
+    
+    const dateInput = document.getElementById('expense-date');
     dateInput.value = formattedDate;
-} 
+}
+
+// Элементы управления категориями
+const categoriesModal = document.getElementById('categoriesModal');
+const manageCategoriesBtn = document.getElementById('manageCategoriesBtn');
+const closeCategoriesModal = document.getElementById('closeCategoriesModal');
+const categoryForm = document.getElementById('category-form');
+const categoriesList = document.getElementById('categories-list');
+const categoryColor = document.getElementById('category-color');
+const randomColorBtn = document.getElementById('random-color');
+const categorySubmit = document.getElementById('category-submit');
+const categoryActionText = document.getElementById('category-action-text');
+const categoryCancel = document.getElementById('category-cancel');
+
+// Переменная для хранения ID редактируемой категории
+let editingCategoryId = null;
+
+// Функция сохранения категорий
+function saveCategories() {
+    localStorage.setItem('categories', JSON.stringify(categories));
+    updateCategorySelects();
+}
+
+// Функция обновления списков выбора категорий
+function updateCategorySelects() {
+    const selects = [
+        document.getElementById('expense-type'),
+        document.getElementById('expense-filter'),
+        document.getElementById('analysis-category')
+    ];
+
+    selects.forEach(select => {
+        const currentValue = select.value;
+        select.innerHTML = '';
+        
+        // Добавляем опцию "Все категории" только для фильтра
+        if (select.id === 'expense-filter') {
+            select.innerHTML = '<option value="все">🔍 Все категории</option>';
+        } else {
+            select.innerHTML = '<option value="">Выберите категорию</option>';
+        }
+
+        categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category.value;
+            option.textContent = `${category.emoji} ${category.name}`;
+            select.appendChild(option);
+        });
+
+        // Восстанавливаем выбранное значение
+        if (categories.some(cat => cat.value === currentValue)) {
+            select.value = currentValue;
+        }
+    });
+    
+    updateChart();
+}
+
+// Функция генерации случайного цвета
+function getRandomColor() {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+}
+
+// Обработчик для кнопки случайного цвета
+randomColorBtn.addEventListener('click', () => {
+    categoryColor.value = getRandomColor();
+});
+
+// Функция отображения категорий
+function renderCategories() {
+    categoriesList.innerHTML = '';
+    
+    categories.forEach(category => {
+        const categoryElement = document.createElement('div');
+        categoryElement.className = 'category-item';
+        if (editingCategoryId === category.id) {
+            categoryElement.classList.add('editing');
+        }
+        
+        categoryElement.innerHTML = `
+            <div class="category-info">
+                <span class="color-indicator" style="background-color: ${category.color}"></span>
+                <span class="category-emoji">${category.emoji}</span>
+                <span>${category.name}</span>
+            </div>
+            <div class="buttons">
+                <button class="edit-btn" onclick="startEditCategory(${category.id})">
+                    <span class="icon">✏️</span>
+                </button>
+                <button class="delete-btn" onclick="confirmDeleteCategory(${category.id}, '${category.name}')">
+                    <span class="icon">🗑️</span>
+                </button>
+            </div>
+        `;
+        
+        categoriesList.appendChild(categoryElement);
+    });
+}
+
+// Функция начала редактирования категории
+function startEditCategory(id) {
+    const category = categories.find(cat => cat.id === id);
+    if (!category) return;
+    
+    editingCategoryId = id;
+    document.getElementById('category-name').value = category.name;
+    document.getElementById('category-emoji').value = category.emoji;
+    document.getElementById('category-color').value = category.color;
+    categoryActionText.textContent = 'Сохранить изменения';
+    categoryCancel.style.display = 'flex';
+    renderCategories();
+}
+
+// Функция отмены редактирования
+function cancelEdit() {
+    editingCategoryId = null;
+    categoryForm.reset();
+    categoryActionText.textContent = 'Добавить категорию';
+    categoryCancel.style.display = 'none';
+    renderCategories();
+}
+
+// Обновляем обработчик формы добавления/редактирования категории
+categoryForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    
+    const name = document.getElementById('category-name').value;
+    const emoji = document.getElementById('category-emoji').value;
+    const color = document.getElementById('category-color').value;
+    const value = name.toLowerCase();
+    
+    if (editingCategoryId) {
+        // Режим редактирования
+        const categoryIndex = categories.findIndex(cat => cat.id === editingCategoryId);
+        if (categoryIndex === -1) return;
+        
+        // Проверяем, не занято ли новое имя другой категорией
+        if (categories.some(cat => cat.value === value && cat.id !== editingCategoryId)) {
+            showModal('Категория с таким названием уже существует.');
+            return;
+        }
+        
+        // Проверяем, используется ли категория
+        const oldValue = categories[categoryIndex].value;
+        const isUsed = expenses.some(expense => expense.type === oldValue);
+        
+        // Обновляем категорию
+        categories[categoryIndex] = {
+            ...categories[categoryIndex],
+            name,
+            emoji,
+            color,
+            value
+        };
+        
+        // Если категория используется, обновляем все расходы с этой категорией
+        if (isUsed) {
+            expenses = expenses.map(expense => {
+                if (expense.type === oldValue) {
+                    return { ...expense, type: value };
+                }
+                return expense;
+            });
+            localStorage.setItem('expenses', JSON.stringify(expenses));
+        }
+        
+        cancelEdit();
+    } else {
+        // Режим добавления
+        if (categories.some(cat => cat.value === value)) {
+            showModal('Категория с таким названием уже существует.');
+            return;
+        }
+        
+        const category = {
+            id: Date.now(),
+            name,
+            emoji,
+            color,
+            value
+        };
+        
+        categories.push(category);
+    }
+    
+    saveCategories();
+    renderCategories();
+    categoryForm.reset();
+    categoryColor.value = getRandomColor();
+    
+    // Показываем уведомление
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    notification.style.backgroundColor = 'var(--success-color)';
+    notification.textContent = editingCategoryId ? 'Категория обновлена' : 'Категория добавлена';
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+});
+
+// Добавляем обработчик для кнопки отмены
+categoryCancel.addEventListener('click', cancelEdit);
+
+// Функция подтверждения удаления категории
+function confirmDeleteCategory(id, name) {
+    // Проверяем, используется ли категория
+    const categoryValue = categories.find(cat => cat.id === id)?.value;
+    const isUsed = expenses.some(expense => expense.type === categoryValue);
+    
+    if (isUsed) {
+        showModal(`Категория "${name}" не может быть удалена, так как она используется в расходах.`);
+        return;
+    }
+    
+    showModal(`Вы уверены, что хотите удалить категорию "${name}"?`, deleteCategory, [id]);
+}
+
+// Функция удаления категории
+function deleteCategory(id) {
+    categories = categories.filter(category => category.id !== id);
+    saveCategories();
+    renderCategories();
+}
+
+// Обработчики событий для модального окна категорий
+manageCategoriesBtn.addEventListener('click', () => {
+    categoriesModal.style.display = 'flex';
+    renderCategories();
+});
+
+closeCategoriesModal.addEventListener('click', () => {
+    categoriesModal.style.display = 'none';
+});
+
+categoriesModal.addEventListener('click', (e) => {
+    if (e.target === categoriesModal) {
+        categoriesModal.style.display = 'none';
+    }
+});
+
+// Элементы анализа расходов
+const analysisCategory = document.getElementById('analysis-category');
+const analysisPeriod = document.getElementById('analysis-period');
+const analysisStartDate = document.getElementById('analysis-start-date');
+const analysisEndDate = document.getElementById('analysis-end-date');
+const analysisSearch = document.getElementById('analysis-search');
+const totalAmountElement = document.getElementById('total-amount');
+const categoriesAmountsElement = document.getElementById('categories-amounts');
+const dateRangeContainer = document.querySelector('.date-range');
+
+// Переменные для календаря анализа
+let analysisStartSelectedDate = new Date();
+let analysisEndSelectedDate = new Date();
+
+// Открыть календарь при клике на поля даты анализа
+analysisStartDate.addEventListener('click', (e) => {
+    e.preventDefault();
+    selectedDate = analysisStartSelectedDate;
+    currentDate = new Date(selectedDate);
+    updateDateTarget = 'analysis-start';
+    calendarOverlay.style.display = 'flex';
+    renderCalendar();
+});
+
+analysisEndDate.addEventListener('click', (e) => {
+    e.preventDefault();
+    selectedDate = analysisEndSelectedDate;
+    currentDate = new Date(selectedDate);
+    updateDateTarget = 'analysis-end';
+    calendarOverlay.style.display = 'flex';
+    renderCalendar();
+});
+
+// Обновляем функцию updateDateInput для поддержки разных полей даты
+let updateDateTarget = 'expense';
+
+function updateDateInput() {
+    const formattedDate = selectedDate.toISOString().split('T')[0];
+    
+    switch (updateDateTarget) {
+        case 'analysis-start':
+            analysisStartDate.value = formattedDate;
+            analysisStartSelectedDate = new Date(selectedDate);
+            break;
+        case 'analysis-end':
+            analysisEndDate.value = formattedDate;
+            analysisEndSelectedDate = new Date(selectedDate);
+            break;
+        default:
+            const dateInput = document.getElementById('expense-date');
+            dateInput.value = formattedDate;
+    }
+    
+    if (updateDateTarget.startsWith('analysis')) {
+        updateAnalysis();
+    }
+}
+
+// Обновляем обработчик клика на expense-date
+document.getElementById('expense-date').addEventListener('click', (e) => {
+    e.preventDefault();
+    updateDateTarget = 'expense';
+    calendarOverlay.style.display = 'flex';
+    renderCalendar();
+});
+
+// Функция форматирования суммы
+function formatAmount(amount) {
+    return new Intl.NumberFormat('ru-RU', {
+        style: 'currency',
+        currency: 'RUB',
+        minimumFractionDigits: 2
+    }).format(amount);
+}
+
+// Обновление списка категорий в анализе
+function updateAnalysisCategories() {
+    analysisCategory.innerHTML = '<option value="все">🔍 Все категории</option>';
+    categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category.value;
+        option.textContent = `${category.emoji} ${category.name}`;
+        analysisCategory.appendChild(option);
+    });
+}
+
+// Получение дат для периода
+function getDateRange(period) {
+    const today = new Date();
+    const start = new Date();
+    
+    switch (period) {
+        case 'day':
+            start.setHours(0, 0, 0, 0);
+            return { start, end: today };
+        case 'week':
+            start.setDate(today.getDate() - 7);
+            return { start, end: today };
+        case 'month':
+            start.setMonth(today.getMonth() - 1);
+            return { start, end: today };
+        case 'year':
+            start.setFullYear(today.getFullYear() - 1);
+            return { start, end: today };
+        case 'custom':
+            return {
+                start: analysisStartDate.value ? new Date(analysisStartDate.value) : null,
+                end: analysisEndDate.value ? new Date(analysisEndDate.value) : null
+            };
+        default:
+            return { start: null, end: null };
+    }
+}
+
+// Фильтрация расходов
+function filterExpensesForAnalysis() {
+    let filteredExpenses = [...expenses];
+    const searchTerm = analysisSearch.value.toLowerCase();
+    const selectedCategory = analysisCategory.value;
+    const { start, end } = getDateRange(analysisPeriod.value);
+    
+    // Фильтр по категории
+    if (selectedCategory !== 'все') {
+        filteredExpenses = filteredExpenses.filter(expense => expense.type === selectedCategory);
+    }
+    
+    // Фильтр по названию
+    if (searchTerm) {
+        filteredExpenses = filteredExpenses.filter(expense => 
+            expense.name.toLowerCase().includes(searchTerm)
+        );
+    }
+    
+    // Фильтр по датам
+    if (start && end) {
+        filteredExpenses = filteredExpenses.filter(expense => {
+            const expenseDate = new Date(expense.date);
+            return expenseDate >= start && expenseDate <= end;
+        });
+    }
+    
+    return filteredExpenses;
+}
+
+// Обновление результатов анализа
+function updateAnalysis() {
+    const filteredExpenses = filterExpensesForAnalysis();
+    const totalAmount = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    
+    // Обновляем общую сумму
+    totalAmountElement.textContent = formatAmount(totalAmount);
+    
+    // Группируем расходы по категориям
+    const categoryAmounts = {};
+    filteredExpenses.forEach(expense => {
+        if (!categoryAmounts[expense.type]) {
+            categoryAmounts[expense.type] = 0;
+        }
+        categoryAmounts[expense.type] += expense.amount;
+    });
+    
+    // Отображаем суммы по категориям
+    categoriesAmountsElement.innerHTML = '';
+    Object.entries(categoryAmounts).forEach(([type, amount]) => {
+        const category = categories.find(cat => cat.value === type);
+        if (category) {
+            const percentage = ((amount / totalAmount) * 100).toFixed(1);
+            const categoryElement = document.createElement('div');
+            categoryElement.className = 'category-amount';
+            categoryElement.innerHTML = `
+                <div class="category-info">
+                    <span class="category-emoji">${category.emoji}</span>
+                    <span>${category.name}</span>
+                </div>
+                <div>
+                    <span class="amount">${formatAmount(amount)}</span>
+                    <span class="percentage">${percentage}%</span>
+                </div>
+            `;
+            categoriesAmountsElement.appendChild(categoryElement);
+        }
+    });
+}
+
+// Обработчики событий для анализа
+analysisPeriod.addEventListener('change', () => {
+    dateRangeContainer.style.display = 
+        analysisPeriod.value === 'custom' ? 'block' : 'none';
+    updateAnalysis();
+});
+
+[analysisCategory, analysisSearch, analysisStartDate, analysisEndDate].forEach(
+    element => element.addEventListener('change', updateAnalysis)
+);
+
+analysisSearch.addEventListener('input', updateAnalysis);
+
+// Инициализация анализа
+updateAnalysisCategories();
+updateAnalysis();
+
+// График расходов
+const chartPeriodSelect = document.getElementById('chart-period');
+const chartLegend = document.getElementById('chart-legend');
+const ctx = document.getElementById('expenses-chart').getContext('2d');
+
+// Создаем график
+let expensesChart = null;
+
+// Функция получения данных для графика
+function getChartData(period) {
+    const today = new Date();
+    let startDate = new Date();
+    
+    switch (period) {
+        case 'week':
+            startDate.setDate(today.getDate() - 7);
+            break;
+        case 'month':
+            startDate.setMonth(today.getMonth() - 1);
+            break;
+        case 'year':
+            startDate.setFullYear(today.getFullYear() - 1);
+            break;
+    }
+    
+    // Группируем расходы по датам и категориям
+    const dateExpenses = {};
+    const categoryVisibility = {};
+    
+    // Инициализируем видимость категорий
+    categories.forEach(category => {
+        categoryVisibility[category.value] = true;
+    });
+    
+    // Фильтруем расходы по периоду
+    const filteredExpenses = expenses.filter(expense => {
+        const expenseDate = new Date(expense.date);
+        return expenseDate >= startDate && expenseDate <= today;
+    });
+    
+    // Группируем расходы по датам и категориям
+    filteredExpenses.forEach(expense => {
+        const date = expense.date;
+        if (!dateExpenses[date]) {
+            dateExpenses[date] = {};
+            categories.forEach(category => {
+                dateExpenses[date][category.value] = 0;
+            });
+        }
+        dateExpenses[date][expense.type] += expense.amount;
+    });
+    
+    // Сортируем даты
+    const sortedDates = Object.keys(dateExpenses).sort();
+    
+    // Создаем наборы данных для каждой категории
+    const datasets = categories.map(category => ({
+        label: `${category.emoji} ${category.name}`,
+        data: sortedDates.map(date => dateExpenses[date][category.value]),
+        borderColor: category.color,
+        backgroundColor: category.color,
+        tension: 0.4,
+        hidden: !categoryVisibility[category.value]
+    }));
+    
+    return {
+        labels: sortedDates,
+        datasets
+    };
+}
+
+// Функция обновления легенды
+function updateChartLegend() {
+    chartLegend.innerHTML = '';
+    
+    categories.forEach(category => {
+        const legendItem = document.createElement('div');
+        legendItem.className = 'legend-item';
+        if (!expensesChart.isDatasetVisible(categories.indexOf(category))) {
+            legendItem.classList.add('disabled');
+        }
+        
+        legendItem.innerHTML = `
+            <span class="legend-color" style="background: ${category.color}"></span>
+            <span>${category.emoji} ${category.name}</span>
+        `;
+        
+        legendItem.addEventListener('click', () => {
+            const index = categories.indexOf(category);
+            const isVisible = expensesChart.isDatasetVisible(index);
+            
+            expensesChart.setDatasetVisibility(index, !isVisible);
+            legendItem.classList.toggle('disabled');
+            expensesChart.update();
+        });
+        
+        chartLegend.appendChild(legendItem);
+    });
+}
+
+// Функция создания/обновления графика
+function updateChart() {
+    const data = getChartData(chartPeriodSelect.value);
+    
+    if (expensesChart) {
+        expensesChart.data = data;
+        expensesChart.update();
+    } else {
+        expensesChart = new Chart(ctx, {
+            type: 'line',
+            data: data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            unit: chartPeriodSelect.value === 'year' ? 'month' : 'day',
+                            displayFormats: {
+                                day: 'dd.MM',
+                                month: 'MM.yyyy'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString('ru-RU') + ' ₽';
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw;
+                                return `${context.dataset.label}: ${value.toLocaleString('ru-RU')} ₽`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    updateChartLegend();
+}
+
+// Обработчики событий
+chartPeriodSelect.addEventListener('change', updateChart);
+
+// Обновляем график при изменении категорий
+function updateCategorySelects() {
+    const selects = [
+        document.getElementById('expense-type'),
+        document.getElementById('expense-filter'),
+        document.getElementById('analysis-category')
+    ];
+    
+    // ... существующий код ...
+    
+    updateChart();
+}
+
+// Инициализация графика
+updateChart();
+
+// Инициализация цвета при загрузке страницы
+categoryColor.value = getRandomColor(); 
