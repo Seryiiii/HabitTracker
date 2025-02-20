@@ -86,7 +86,7 @@ form {
     }
 }
 
-input, select {
+input {
     padding: 0.75rem 1rem;
     border: 1px solid var(--border-color);
     border-radius: 0.5rem;
@@ -94,6 +94,18 @@ input, select {
     transition: all 0.2s;
     background: var(--bg-primary);
     color: var(--text-primary);
+    cursor: text;
+}
+
+select {
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    transition: all 0.2s;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    cursor: pointer;
 }
 
 input:focus, select:focus {
@@ -670,6 +682,7 @@ body.dark-theme .filter-group select {
     overflow-y: auto;
     padding-right: 10px;
     margin-right: -10px;
+    margin-bottom: 1.5rem;
 }
 
 .categories-list::-webkit-scrollbar {
@@ -1001,4 +1014,12 @@ body.dark-theme .analysis-filters input[type="date"] {
     height: 400px;
     width: 100%;
     margin-top: 1rem;
+}
+
+.modal .close-button {
+    margin-top: 1rem;
+}
+
+#analysis-search {
+    cursor: text;
 } 
