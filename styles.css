@@ -259,6 +259,25 @@ body.dark-theme .progress-bar {
     margin-top: 1.5rem;
 }
 
+.confirm-button {
+    background-color: var(--danger-color);
+}
+
+.confirm-button:hover {
+    background-color: #dc2626;
+    transform: translateY(-1px);
+}
+
+.cancel-button {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.cancel-button:hover {
+    background-color: var(--border-color);
+}
+
 /* Темная тема */
 body.dark-theme {
     --text-primary: #f3f4f6;
