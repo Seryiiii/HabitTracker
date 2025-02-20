@@ -938,6 +938,13 @@ body.dark-theme .analysis-filters input[type="date"] {
     background: var(--bg-primary);
     color: var(--text-primary);
     cursor: pointer;
+    margin-right: 0.5rem;
+}
+
+.chart-period {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
 }
 
 .chart-legend {

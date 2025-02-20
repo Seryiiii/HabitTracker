@@ -957,6 +957,7 @@ updateAnalysis();
 
 // График расходов
 const chartPeriodSelect = document.getElementById('chart-period');
+const chartTypeSelect = document.getElementById('chart-type');
 const chartLegend = document.getElementById('chart-legend');
 const ctx = document.getElementById('expenses-chart').getContext('2d');
 
@@ -964,7 +965,7 @@ const ctx = document.getElementById('expenses-chart').getContext('2d');
 let expensesChart = null;
 
 // Функция получения данных для графика
-function getChartData(period) {
+function getChartData(period, chartType) {
     const today = new Date();
     let startDate = new Date();
     
@@ -980,160 +981,179 @@ function getChartData(period) {
             break;
     }
     
-    // Группируем расходы по датам и категориям
-    const dateExpenses = {};
-    const categoryVisibility = {};
-    
-    // Инициализируем видимость категорий
-    categories.forEach(category => {
-        categoryVisibility[category.value] = true;
-    });
-    
     // Фильтруем расходы по периоду
     const filteredExpenses = expenses.filter(expense => {
         const expenseDate = new Date(expense.date);
         return expenseDate >= startDate && expenseDate <= today;
     });
-    
-    // Группируем расходы по датам и категориям
-    filteredExpenses.forEach(expense => {
-        const date = expense.date;
-        if (!dateExpenses[date]) {
-            dateExpenses[date] = {};
-            categories.forEach(category => {
-                dateExpenses[date][category.value] = 0;
-            });
-        }
-        dateExpenses[date][expense.type] += expense.amount;
-    });
-    
-    // Сортируем даты
-    const sortedDates = Object.keys(dateExpenses).sort();
-    
-    // Создаем наборы данных для каждой категории
-    const datasets = categories.map(category => ({
-        label: `${category.emoji} ${category.name}`,
-        data: sortedDates.map(date => dateExpenses[date][category.value]),
-        borderColor: category.color,
-        backgroundColor: category.color,
-        tension: 0.4,
-        hidden: !categoryVisibility[category.value]
-    }));
-    
-    return {
-        labels: sortedDates,
-        datasets
-    };
+
+    if (chartType === 'pie') {
+        // Для круговой диаграммы группируем данные по категориям
+        const categoryTotals = {};
+        categories.forEach(category => {
+            categoryTotals[category.value] = 0;
+        });
+
+        filteredExpenses.forEach(expense => {
+            categoryTotals[expense.type] += expense.amount;
+        });
+
+        return {
+            labels: categories.map(category => `${category.emoji} ${category.name}`),
+            datasets: [{
+                data: categories.map(category => categoryTotals[category.value]),
+                backgroundColor: categories.map(category => category.color),
+                borderColor: categories.map(category => category.color),
+                borderWidth: 1
+            }]
+        };
+    } else {
+        // Для линейного графика и гистограммы группируем по датам и категориям
+        const dateExpenses = {};
+        const categoryVisibility = {};
+        
+        categories.forEach(category => {
+            categoryVisibility[category.value] = true;
+        });
+        
+        filteredExpenses.forEach(expense => {
+            const date = expense.date;
+            if (!dateExpenses[date]) {
+                dateExpenses[date] = {};
+                categories.forEach(category => {
+                    dateExpenses[date][category.value] = 0;
+                });
+            }
+            dateExpenses[date][expense.type] += expense.amount;
+        });
+        
+        const sortedDates = Object.keys(dateExpenses).sort();
+        
+        return {
+            labels: sortedDates,
+            datasets: categories.map(category => ({
+                label: `${category.emoji} ${category.name}`,
+                data: sortedDates.map(date => dateExpenses[date][category.value]),
+                borderColor: category.color,
+                backgroundColor: chartType === 'bar' ? category.color : category.color + '80',
+                tension: 0.4,
+                hidden: !categoryVisibility[category.value]
+            }))
+        };
+    }
 }
 
 // Функция обновления легенды
 function updateChartLegend() {
     chartLegend.innerHTML = '';
     
-    categories.forEach(category => {
-        const legendItem = document.createElement('div');
-        legendItem.className = 'legend-item';
-        if (!expensesChart.isDatasetVisible(categories.indexOf(category))) {
-            legendItem.classList.add('disabled');
-        }
-        
-        legendItem.innerHTML = `
-            <span class="legend-color" style="background: ${category.color}"></span>
-            <span>${category.emoji} ${category.name}</span>
-        `;
-        
-        legendItem.addEventListener('click', () => {
-            const index = categories.indexOf(category);
-            const isVisible = expensesChart.isDatasetVisible(index);
+    if (chartTypeSelect.value === 'pie') {
+        // Для круговой диаграммы легенда не кликабельная
+        categories.forEach((category, index) => {
+            const legendItem = document.createElement('div');
+            legendItem.className = 'legend-item';
             
-            expensesChart.setDatasetVisibility(index, !isVisible);
-            legendItem.classList.toggle('disabled');
-            expensesChart.update();
+            legendItem.innerHTML = `
+                <span class="legend-color" style="background: ${category.color}"></span>
+                <span>${category.emoji} ${category.name}</span>
+            `;
+            
+            chartLegend.appendChild(legendItem);
         });
-        
-        chartLegend.appendChild(legendItem);
-    });
+    } else {
+        // Для других типов графиков - кликабельная легенда
+        categories.forEach(category => {
+            const legendItem = document.createElement('div');
+            legendItem.className = 'legend-item';
+            if (!expensesChart.isDatasetVisible(categories.indexOf(category))) {
+                legendItem.classList.add('disabled');
+            }
+            
+            legendItem.innerHTML = `
+                <span class="legend-color" style="background: ${category.color}"></span>
+                <span>${category.emoji} ${category.name}</span>
+            `;
+            
+            legendItem.addEventListener('click', () => {
+                const index = categories.indexOf(category);
+                const isVisible = expensesChart.isDatasetVisible(index);
+                
+                expensesChart.setDatasetVisibility(index, !isVisible);
+                legendItem.classList.toggle('disabled');
+                expensesChart.update();
+            });
+            
+            chartLegend.appendChild(legendItem);
+        });
+    }
 }
 
 // Функция создания/обновления графика
 function updateChart() {
-    const data = getChartData(chartPeriodSelect.value);
+    const chartType = chartTypeSelect.value;
+    const data = getChartData(chartPeriodSelect.value, chartType);
     
-    if (expensesChart) {
-        expensesChart.data = data;
-        expensesChart.update();
-    } else {
-        expensesChart = new Chart(ctx, {
-            type: 'line',
-            data: data,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {
-                    intersect: false,
-                    mode: 'index'
-                },
-                scales: {
-                    x: {
-                        type: 'time',
-                        time: {
-                            unit: chartPeriodSelect.value === 'year' ? 'month' : 'day',
-                            displayFormats: {
-                                day: 'dd.MM',
-                                month: 'MM.yyyy'
-                            }
-                        },
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.1)'
-                        }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return value.toLocaleString('ru-RU') + ' ₽';
-                            }
-                        },
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.1)'
-                        }
+    const options = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    };
+
+    if (chartType !== 'pie') {
+        options.interaction = {
+            intersect: false,
+            mode: 'index'
+        };
+        options.scales = {
+            x: {
+                type: 'time',
+                time: {
+                    unit: chartPeriodSelect.value === 'year' ? 'month' : 'day',
+                    displayFormats: {
+                        day: 'dd.MM',
+                        month: 'MM.yyyy'
                     }
                 },
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const value = context.raw;
-                                return `${context.dataset.label}: ${value.toLocaleString('ru-RU')} ₽`;
-                            }
-                        }
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.1)'
+                }
+            },
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return value.toLocaleString('ru-RU') + ' ₽';
                     }
+                },
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.1)'
                 }
             }
-        });
+        };
     }
     
+    if (expensesChart) {
+        expensesChart.destroy();
+    }
+
+    expensesChart = new Chart(ctx, {
+        type: chartType,
+        data: data,
+        options: options
+    });
+
     updateChartLegend();
 }
 
-// Обработчики событий
-chartPeriodSelect.addEventListener('change', updateChart);
+// Добавляем обработчик изменения типа графика
+chartTypeSelect.addEventListener('change', updateChart);
 
-// Обновляем график при изменении категорий
-function updateCategorySelects() {
-    const selects = [
-        document.getElementById('expense-type'),
-        document.getElementById('expense-filter'),
-        document.getElementById('analysis-category')
-    ];
-    
-    // ... существующий код ...
-    
-    updateChart();
-}
+// Обновляем обработчик изменения периода
+chartPeriodSelect.addEventListener('change', updateChart);
 
 // Инициализация графика
 updateChart();
