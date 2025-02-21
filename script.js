@@ -506,10 +506,28 @@ function isCurrentDay(day) {
 }
 
 function updateDateInput() {
-    const formattedDate = selectedDate.toISOString().split('T')[0];
+    // Учитываем часовой пояс, добавляя смещение
+    const date = new Date(selectedDate);
+    date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+    const formattedDate = date.toISOString().split('T')[0];
     
-    const dateInput = document.getElementById('expense-date');
-    dateInput.value = formattedDate;
+    switch (updateDateTarget) {
+        case 'analysis-start':
+            analysisStartDate.value = formattedDate;
+            analysisStartSelectedDate = new Date(selectedDate);
+            break;
+        case 'analysis-end':
+            analysisEndDate.value = formattedDate;
+            analysisEndSelectedDate = new Date(selectedDate);
+            break;
+        default:
+            const dateInput = document.getElementById('expense-date');
+            dateInput.value = formattedDate;
+    }
+    
+    if (updateDateTarget.startsWith('analysis')) {
+        updateAnalysis();
+    }
 }
 
 // Элементы управления категориями
@@ -791,7 +809,10 @@ analysisEndDate.addEventListener('click', (e) => {
 let updateDateTarget = 'expense';
 
 function updateDateInput() {
-    const formattedDate = selectedDate.toISOString().split('T')[0];
+    // Учитываем часовой пояс, добавляя смещение
+    const date = new Date(selectedDate);
+    date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+    const formattedDate = date.toISOString().split('T')[0];
     
     switch (updateDateTarget) {
         case 'analysis-start':
